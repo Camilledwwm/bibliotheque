@@ -1,0 +1,44 @@
+# script créé le : Thu Jul 24 14:10:05 CEST 2025 -   syntaxe MySQL ;
+
+# use  VOTRE_BASE_DE_DONNEE ;
+
+DROP TABLE IF EXISTS Livre ;
+CREATE TABLE Livre (id_livre int AUTO_INCREMENT NOT NULL,
+titre VARCHAR(256),
+disponibilite BOOL,
+annee INT,
+id_ecrivain INT,
+id_genre INT,
+PRIMARY KEY (id_livre) ) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS Ecrivain ;
+CREATE TABLE Ecrivain (id_ecrivain int AUTO_INCREMENT NOT NULL,
+nom_ecrivain VARCHAR(256),
+prenom_ecrivain VARCHAR(256),
+PRIMARY KEY (id_ecrivain) ) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS Genre ;
+CREATE TABLE Genre (id_genre int AUTO_INCREMENT NOT NULL,
+nom_genre VARCHAR(256),
+PRIMARY KEY (id_genre) ) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS Utilisateur ;
+CREATE TABLE Utilisateur (id_utilisateur int AUTO_INCREMENT NOT NULL,
+nom_utilisateur VARCHAR(256),
+prenom_utilisateur VARCHAR(256),
+mail_utilisateur VARCHAR(256),
+PRIMARY KEY (id_utilisateur) ) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS Emprunt ;
+CREATE TABLE Emprunt (id_emprunt int AUTO_INCREMENT NOT NULL,
+date_emprunt DATE,
+date_retour DATE,
+id_livre INT NOT NULL,
+id_utilisateur INT NOT NULL,
+PRIMARY KEY (id_emprunt) ) ENGINE=InnoDB;
+
+ALTER TABLE Livre ADD CONSTRAINT FK_Livre_id_ecrivain FOREIGN KEY (id_ecrivain) REFERENCES Ecrivain (id_ecrivain);
+
+ALTER TABLE Livre ADD CONSTRAINT FK_Livre_id_genre FOREIGN KEY (id_genre) REFERENCES Genre (id_genre);
+ALTER TABLE Emprunt ADD CONSTRAINT FK_Emprunt_id_livre FOREIGN KEY (id_livre) REFERENCES Livre (id_livre);
+ALTER TABLE Emprunt ADD CONSTRAINT FK_Emprunt_id_utilisateur FOREIGN KEY (id_utilisateur) REFERENCES Utilisateur (id_utilisateur);

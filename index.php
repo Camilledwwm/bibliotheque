@@ -8,8 +8,6 @@ $password = '';
 $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $password);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-
-
 ?>
 
 <!DOCTYPE html>
@@ -24,11 +22,10 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 <body>
 
     <h1>Gestion de la bibliothèque</h1>
+
+    <!-- --------------- SECTION LIVRES DÉBUT --------------- -->
     <div class="livre">
 
-        <!-- --------------- SECTION LIVRES DÉBUT --------------- -->
-
-        <!-- IL RESTE À CODER L'UPDATE ET LE DELETE -->
         <h2>- Les Livres -</h2>
 
         <a href="?page=allBooks">
@@ -59,11 +56,14 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                     echo "Non disponible" . "<br><br>";
                 }
 
+                // LIEN DE MODIFICATION
+                echo '<a href="?id=' . $idLivreASupprimer . '">Modifier</a><br>';
+
                 // INITIALISATION DU BOUTON DE SUPPRESSION QUI NECESSITE UN FORM
                 echo '<form method="post">';
                 echo "<input type='hidden' name='idDelete' value='$idLivreASupprimer'>";
 
-                echo "<input type='submit' name='submitDeleteBook' value='Supprimer'><br>";
+                echo "<input type='submit' name='submitDeleteBook' value='Supprimer'><br><br>";
                 echo "</form>";
 
                 if (isset($_POST['submitDeleteBook'])) {
@@ -77,6 +77,56 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 }
             }
         }
+
+        // INITIALISATION DU FORMULAIRE DE MODIFICATION
+        if (isset($_GET['id'])) {
+            $idLivre = $_GET['id'];
+
+            $sqlIdLivre = "SELECT * FROM `livre` WHERE id_livre = '$idLivre'";
+            $stmtIdLivre = $pdo->prepare($sqlIdLivre);
+            $stmtIdLivre->execute();
+
+            $resultsIdLivre = $stmtIdLivre->fetchAll(PDO::FETCH_ASSOC);
+
+            echo '<form method="POST">
+            <label>Id</label>
+            <br>
+            <input type="text" name="idLivreUpdate" value="' . $resultsIdLivre[0]['id_livre'] . '">
+            <br>
+            <br>
+
+            <label>Titre</label>
+            <br>
+            <input type="text" name="titreLivreUpdate" value="' . $resultsIdLivre[0]['titre'] . '">
+            <br>
+            <br>
+
+    
+
+            <label>Année</label>
+            <br>
+            <input type="text" name="anneeLivreUpdate" value="' . $resultsIdLivre[0]['annee'] . '">
+            <br>
+            <br>
+
+            <input type="submit" name="submitLivreUpdate" value="Mettre à jour">
+            </form>';
+        }
+
+        // REQUETE DE MODIFICATION EN CLIQUANT SUR LE BOUTON METTRE A JOUR
+        if (isset($_POST['submitLivreUpdate'])) {
+            $idLivreUpdate = $_POST['idLivreUpdate'];
+            $nomLivreUpdate = $_POST['titreLivreUpdate'];
+            $anneeLivreUpdate = $_POST['anneeLivreUpdate'];
+
+            $sqlLivreUpdate = "UPDATE `livre` SET `titre`='$nomLivreUpdate', `disponibilite`='[value-3]',`annee`='[value-4]',`id_ecrivain`='[value-5]',`id_genre`='[value-6] WHERE id_livre = '$idLivreUpdate'";
+
+            $stmtLivreUpdate = $pdo->prepare($sqlLivreUpdate);
+            $stmtLivreUpdate->execute();
+
+            echo "Livre modifié avec succès !";
+        }
+
         ?>
 
 
@@ -217,11 +267,17 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             foreach ($resultsAllAuthors as $key => $value) {
                 $idEcrivainActuel = $value['id_ecrivain'];
 
+
                 // NOUVEL AUTEUR SI L'ID CHANGE
                 if ($idEcrivainActuel !== $dernierIdAuteur) {
 
                     // SI CE N'EST PAS LE PREMIER AUTEUR, ON AFFICHE SON BOUTON DE SUPPRESSION
                     if ($dernierIdAuteur !== "") {
+
+                        // LIEN DE MODIFICATION
+                        echo '<a href="?id=' . $idEcrivainActuel . '">Modifier</a><br>';
+
+                        // BOUTON SUPPRIMER
                         echo '<form method="post">';
                         echo "<input type='hidden' name='idDeleteEcrivain' value='$dernierIdAuteur'>";
                         echo "<input type='submit' name='submitDeleteEcrivain' value='Supprimer'><br>";
@@ -235,7 +291,7 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                     if (!empty($value['titre'])) {
                         echo "- " . htmlspecialchars($value['titre']) . "<br>";
                     } else {
-                        echo "Aucun livre associé<br>";
+                        echo "Aucun livre associé" . "<br>";
                     }
 
                     $dernierIdAuteur = $idEcrivainActuel;
@@ -249,12 +305,65 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // APRÈS LA BOUCLE, ON AFFICHE LE FORMULAIRE POUR LE DERNIER AUTEUR
             if ($dernierIdAuteur !== "") {
+
+                // LIEN DE MODIFICATION
+                echo '<a href="?id=' . $idEcrivainActuel . '">Modifier</a><br>';
+
+                // BOUTON SUPPRIMER
                 echo '<form method="post">';
                 echo "<input type='hidden' name='idDeleteEcrivain' value='$dernierIdAuteur'>";
                 echo "<input type='submit' name='submitDeleteEcrivain' value='Supprimer'><br>";
                 echo "</form><br><br>";
             }
         }
+
+        // INITIALISATION DU FORMULAIRE DE MODIFICATION
+        if (isset($_GET['id'])) {
+            $idEcrivain = $_GET['id'];
+
+            $sqlIdEcrivain = "SELECT * FROM `ecrivain` WHERE id_ecrivain = '$idEcrivain'";
+            $stmtIdEcrivain = $pdo->prepare($sqlIdEcrivain);
+            $stmtIdEcrivain->execute();
+
+            $resultsIdEcrivain = $stmtIdEcrivain->fetchAll(PDO::FETCH_ASSOC);
+
+            echo '<form method="POST">
+            <label>Id</label>
+            <br>
+            <input type="text" name="idEcrivainUpdate" value="' . $resultsIdEcrivain[0]['id_ecrivain'] . '">
+            <br>
+            <br>
+
+            <label>Nom</label>
+            <br>
+            <input type="text" name="nomEcrivainUpdate" value="' . $resultsIdEcrivain[0]['nom_ecrivain'] . '">
+            <br>
+            <br>
+
+            <label>Préom</label>
+            <br>
+            <input type="text" name="prenomEcrivainUpdate" value="' . $resultsIdEcrivain[0]['prenom_ecrivain'] . '">
+            <br>
+            <br>
+
+            <input type="submit" name="submitEcrivainUpdate" value="Mettre à jour">
+            </form>';
+        }
+
+        // REQUETE DE MODIFICATION EN CLIQUANT SUR LE BOUTON METTRE A JOUR
+        if (isset($_POST['submitEcrivainUpdate'])) {
+            $idEcrivainUpdate = $_POST['idEcrivainUpdate'];
+            $nomEcrivainUpdate = $_POST['nomEcrivainUpdate'];
+            $prenomEcrivainUpdate = $_POST['prenomEcrivainUpdate'];
+
+            $sqlEcrivainUpdate = "UPDATE `ecrivain` SET `nom_ecrivain`='$nomEcrivainUpdate' WHERE id_ecrivain = '$idEcrivainUpdate'";
+
+            $stmtEcrivainUpdate = $pdo->prepare($sqlEcrivainUpdate);
+            $stmtEcrivainUpdate->execute();
+
+            echo "Ecrivain modifié avec succès !";
+        }
+
         ?>
 
         <a href="?page=addAuthor">
@@ -328,7 +437,10 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
                 echo "<strong>" . htmlspecialchars($value['nom_genre']) . "</strong><br>";
 
-                // INITIALISATION DU BOUTON DE SUPPRESSION QUI NECESSITE UN FORM
+                // LIEN DE MODIFICATION
+                echo '<a href="?id=' . $idGenreASupprimer . '">Modifier</a>';
+
+                // CREATION DU BOUTON DE SUPPRESSION QUI NECESSITE UN FORM
                 echo '<form method="post">';
                 echo "<input type='hidden' name='idDeleteGenre' value='$idGenreASupprimer'>";
 
@@ -349,7 +461,48 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             }
         }
 
+        // INITIALISATION DU FORMULAIRE DE MODIFICATION
+        if (isset($_GET['id'])) {
+            $idGenre = $_GET['id'];
+
+            $sqlIdGenre = "SELECT * FROM `genre` WHERE id_genre = '$idGenre'";
+            $stmtIdGenre = $pdo->prepare($sqlIdGenre);
+            $stmtIdGenre->execute();
+
+            $resultsIdGenre = $stmtIdGenre->fetchAll(PDO::FETCH_ASSOC);
+
+            echo '<form method="POST">
+            <label>Id</label>
+            <br>
+            <input type="text" name="idGenreUpdate" value="' . $resultsIdGenre[0]['id_genre'] . '">
+            <br>
+            <br>
+
+            <label>Genre</label>
+            <br>
+            <input type="text" name="nomGenreUpdate" value="' . $resultsIdGenre[0]['nom_genre'] . '">
+            <br>
+            <br>
+
+            <input type="submit" name="submitGenreUpdate" value="Mettre à jour">
+            </form>';
+        }
+
+        // REQUETE DE MODIFICATION EN CLIQUANT SUR LE BOUTON METTRE A JOUR
+        if (isset($_POST['submitGenreUpdate'])) {
+            $idGenreUpdate = $_POST['idGenreUpdate'];
+            $nomGenreUpdate = $_POST['nomGenreUpdate'];
+
+            $sqlGenreUpdate = "UPDATE `genre` SET `nom_genre`='$nomGenreUpdate' WHERE id_genre = '$idGenreUpdate'";
+
+            $stmtGenreUpdate = $pdo->prepare($sqlGenreUpdate);
+            $stmtGenreUpdate->execute();
+
+            echo "Genre modifié avec succès !";
+        }
+
         ?>
+
 
         <a href="?page=addGenre">
             <h3>Ajouter un genre</h3>
@@ -428,6 +581,9 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 echo "<strong>" . htmlspecialchars($value['nom_utilisateur']) . " " . htmlspecialchars($value['prenom_utilisateur']) . "</strong><br>";
                 echo "Email : " . htmlspecialchars($value['mail_utilisateur']) . "<br><br>";
 
+                // LIEN DE MODIFICATION
+                echo '<a href="?id=' . $idUserASupprimer . '">Modifier</a><br>';
+
                 // FORMULAIRE DE SUPPRESSION
                 echo '<form method="post">';
                 echo "<input type='hidden' name='idDeleteUser' value='$idUserASupprimer'>";
@@ -435,6 +591,60 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 echo "</form><br><br>";
             }
         }
+
+        if (isset($_GET['id'])) {
+            $idUser = $_GET['id'];
+
+            $sqlIdUser = "SELECT * FROM `utilisateur` WHERE id_utilisateur = '$idUser'";
+            $stmtIdUser = $pdo->prepare($sqlIdUser);
+            $stmtIdUser->execute();
+
+            $resultsIdUser = $stmtIdUser->fetchAll(PDO::FETCH_ASSOC);
+
+            echo '<form method="POST">
+            <label>Id</label>
+            <br>
+            <input type="text" name="idUserUpdate" value="' . $resultsIdUser[0]['id_utilisateur'] . '">
+            <br>
+            <br>
+
+            <label>Nom</label>
+            <br>
+            <input type="text" name="nomUserUpdate" value="' . $resultsIdUser[0]['nom_utilisateur'] . '">
+            <br>
+            <br>
+
+            <label>Prénom</label>
+            <br>
+            <input type="text" name="prenomUserUpdate" value="' . $resultsIdUser[0]['prenom_utilisateur'] . '">
+            <br>
+            <br>
+
+            <label>Mail</label>
+            <br>
+            <input type="text" name="mailUserUpdate" value="' . $resultsIdUser[0]['mail_utilisateur'] . '">
+            <br>
+            <br>
+
+            <input type="submit" name="submitUserUpdate" value="Mettre à jour">
+            </form>';
+        }
+
+        // REQUETE DE MODIFICATION EN CLIQUANT SUR LE BOUTON METTRE A JOUR
+        if (isset($_POST['submitUserUpdate'])) {
+            $idUserUpdate = $_POST['idUserUpdate'];
+            $nomUserUpdate = $_POST['nomUserUpdate'];
+            $prenomUserUpdate = $_POST['prenomUserUpdate'];
+            $mailUserUpdate = $_POST['mailUserUpdate'];
+
+            $sqlUserUpdate = "UPDATE `utilisateur` SET `nom_utilisateur`='$nomUserUpdate', `prenom_utilisateur`='$prenomUserUpdate',`mail_utilisateur`='$mailUserUpdate' WHERE id_utilisateur = '$idUserUpdate'";
+
+            $stmtUserUpdate = $pdo->prepare($sqlUserUpdate);
+            $stmtUserUpdate->execute();
+
+            echo "Utilisateur modifié avec succès !";
+        }
+
         ?>
 
         <a href="?page=addUser">
