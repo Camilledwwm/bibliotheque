@@ -82,53 +82,93 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         if (isset($_GET['id'])) {
             $idLivre = $_GET['id'];
 
-            $sqlIdLivre = "SELECT * FROM `livre` WHERE id_livre = '$idLivre'";
-            $stmtIdLivre = $pdo->prepare($sqlIdLivre);
-            $stmtIdLivre->execute();
+        // Récupérer les informations du livre à modifier
+        $sqlLivre = "SELECT * FROM `livre` WHERE id_livre = ?";
+        $stmtLivre = $pdo->prepare($sqlLivre);
+        $stmtLivre->execute([$idLivre]);
+        $livre = $stmtLivre->fetch(PDO::FETCH_ASSOC);
 
-            $resultsIdLivre = $stmtIdLivre->fetchAll(PDO::FETCH_ASSOC);
+        if ($livre) {
+        // Récupérer tous les auteurs disponibles
+        $sqlAuteurs = "SELECT * FROM `ecrivain` ORDER BY nom_ecrivain";
+        $stmtAuteurs = $pdo->prepare($sqlAuteurs);
+        $stmtAuteurs->execute();
+        $auteurs = $stmtAuteurs->fetchAll(PDO::FETCH_ASSOC);
 
-            echo '<form method="POST">
-            <label>Id</label>
-            <br>
-            <input type="text" name="idLivreUpdate" value="' . $resultsIdLivre[0]['id_livre'] . '">
-            <br>
-            <br>
+        // Récupérer tous les genres disponibles
+        $sqlGenres = "SELECT * FROM `genre` ORDER BY nom_genre";
+        $stmtGenres = $pdo->prepare($sqlGenres);
+        $stmtGenres->execute();
+        $genres = $stmtGenres->fetchAll(PDO::FETCH_ASSOC);
 
-            <label>Titre</label>
-            <br>
-            <input type="text" name="titreLivreUpdate" value="' . $resultsIdLivre[0]['titre'] . '">
-            <br>
-            <br>
+        // Formulaire de modification
+        echo '<form method="POST">
+                <label for="titre">Titre :</label>
+                <br>
+                <input type="text" name="titre" id="titre" value="' . htmlspecialchars($livre['titre']) . '" required>
+                <br><br>
 
-    
+                <label for="id_ecrivain">Auteur :</label>
+                <br>
+                <select name="id_ecrivain" id="id_ecrivain" required>';
+        
+        foreach ($auteurs as $key => $value) {
+        echo "<option value='{$value['id_ecrivain']}'" . ($value['id_ecrivain'] == $livre['id_ecrivain'] ? ' selected' : '') . ">" . htmlspecialchars($value['prenom_ecrivain']) . " " . htmlspecialchars($value['nom_ecrivain']) . "</option>";
+}
+        
+        echo '</select>
+              <br><br>
 
-            <label>Année</label>
-            <br>
-            <input type="text" name="anneeLivreUpdate" value="' . $resultsIdLivre[0]['annee'] . '">
-            <br>
-            <br>
+              <label for="annee">Année :</label>
+              <br>
+              <input type="number" name="annee" id="annee" value="' . htmlspecialchars($livre['annee']) . '" required>
+              <br><br>
 
-            <input type="submit" name="submitLivreUpdate" value="Mettre à jour">
-            </form>';
-        }
+              <label for="genre">Genre :</label>
+              <br>
+              <select name="genre" id="genre" required>';
+        
+        foreach ($genres as $key => $value) {
+        echo "<option value='{$value['id_genre']}'" . ($value['id_genre'] == $livre['id_genre'] ? ' selected' : '') . ">" . htmlspecialchars($value['nom_genre']) . "</option>";
+}
 
-        // REQUETE DE MODIFICATION EN CLIQUANT SUR LE BOUTON METTRE A JOUR
-        if (isset($_POST['submitLivreUpdate'])) {
-            $idLivreUpdate = $_POST['idLivreUpdate'];
-            $nomLivreUpdate = $_POST['titreLivreUpdate'];
-            $anneeLivreUpdate = $_POST['anneeLivreUpdate'];
+        echo '</select>
+              <br><br>
 
-            $sqlLivreUpdate = "UPDATE `livre` SET `titre`='$nomLivreUpdate', `disponibilite`='[value-3]',`annee`='[value-4]',`id_ecrivain`='[value-5]',`id_genre`='[value-6] WHERE id_livre = '$idLivreUpdate'";
+              <label for="disponibilite">Disponible :</label>
+              <input type="checkbox" name="disponibilite" id="disponibilite" ' . ($livre['disponibilite'] ? 'checked' : '') . '>
+              <br><br>
 
-            $stmtLivreUpdate = $pdo->prepare($sqlLivreUpdate);
-            $stmtLivreUpdate->execute();
+              <input type="submit" name="submitUpdate" value="Mettre à jour">
+              </form>';
+    } else {
+        echo "Le livre que vous souhaitez modifier n'existe pas.";
+    }
+}
 
-            echo "Livre modifié avec succès !";
-        }
+    // REQUETE DE MODIFICATION AU CLIC DE MISE AJOUR
+    if (isset($_POST['submitUpdate'])) {
+        $titreUpdate = $_POST['titre'];
+        $auteurUpdate = $_POST['id_ecrivain'];
+        $anneeUpdate = $_POST['annee'];
+        $genreUpdate = $_POST['genre'];
+        $disponibiliteUpdate = isset($_POST['disponibilite']) ? 1 : 0;  // Si la checkbox est cochée, on met 1, sinon 0.
 
-        ?>
+        // Mettre à jour les informations dans la base de données
+        $sqlUpdateLivre = "UPDATE `livre` SET 
+        `titre` = ?, 
+        `annee` = ?, 
+        `id_ecrivain` = ?, 
+        `id_genre` = ?, 
+        `disponibilite` = ? 
+        WHERE `id_livre` = ?";
 
+        $stmtUpdateLivre = $pdo->prepare($sqlUpdateLivre);
+        $stmtUpdateLivre->execute([$titreUpdate, $anneeUpdate, $auteurUpdate, $genreUpdate, $disponibiliteUpdate, $idLivre]);
+
+        echo "Le livre a été mis à jour avec succès !";
+    }
+    ?>
 
         <a href="?page=addBook">
             <h3>Ajouter un livre</h3>
@@ -699,10 +739,132 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     <hr>
 
     <!-- --------------- SECTION EMPRUNTS DEBUT --------------- -->
-    <div class="emprunts">
-        <h2>- Les Emprunts -</h2>
-    </div>
-    <!-- --------------- SECTION EMPRUNTS FIN --------------- -->
+<div class="emprunts">
+    <h2>- Les Emprunts -</h2>
+
+    <?php 
+    // Si le formulaire a été soumis
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        // Récupérer les informations envoyées via POST
+        $id_utilisateur = $_POST['id_utilisateur']; // L'ID de l'utilisateur
+        $id_livre = $_POST['id_livre']; // L'ID du livre
+
+        // 1. Vérifier si le livre est disponible
+        $query = $pdo->prepare("SELECT disponibilite FROM Livre WHERE id_livre = ?");
+        $query->execute([$id_livre]);
+        $livre = $query->fetch(PDO::FETCH_ASSOC);
+
+        if ($livre && $livre['disponibilite'] == 1) {
+            // Le livre est disponible, on l'emprunte
+
+            // 2. Créer les dates d'emprunt et de retour
+            $date_emprunt = date('Y-m-d'); // La date actuelle
+            $date_retour = date('Y-m-d', strtotime('+14 days')); // Retour dans 14 jours
+
+            // 3. Insérer l'emprunt dans la base de données
+            $query = $pdo->prepare("INSERT INTO Emprunt (date_emprunt, date_retour, id_livre, id_utilisateur) 
+                                    VALUES (?, ?, ?, ?)");
+            $query->execute([$date_emprunt, $date_retour, $id_livre, $id_utilisateur]);
+
+            // 4. Mettre à jour la disponibilité du livre
+            $query = $pdo->prepare("UPDATE Livre SET disponibilite = 0 WHERE id_livre = ?");
+            $query->execute([$id_livre]);
+
+            // Message de succès
+            echo "L'emprunt a été enregistré avec succès !";
+        } else {
+            // Si le livre n'est pas disponible
+            echo "Ce livre n'est pas disponible pour l'emprunt.";
+        }
+    }
+
+    // Récupérer les utilisateurs (prénom et nom)
+    $query_utilisateurs = $pdo->query("SELECT id_utilisateur, nom_utilisateur, prenom_utilisateur FROM Utilisateur");
+    $utilisateurs = $query_utilisateurs->fetchAll(PDO::FETCH_ASSOC);
+
+    // Récupérer les auteurs
+    $query_auteurs = $pdo->query("SELECT id_ecrivain, nom_ecrivain, prenom_ecrivain FROM Ecrivain");
+    $auteurs = $query_auteurs->fetchAll(PDO::FETCH_ASSOC);
+
+    // Si un auteur a été sélectionné, récupérer les livres de cet auteur
+    $livres = [];
+    if (isset($_POST['id_auteur'])) {
+        $id_auteur = $_POST['id_auteur'];
+
+        $query_livres = $pdo->prepare("SELECT id_livre, titre FROM Livre WHERE id_ecrivain = ?");
+        $query_livres->execute([$id_auteur]);
+
+        $livres = $query_livres->fetchAll(PDO::FETCH_ASSOC);
+    }
+    ?>
+
+    <!-- Formulaire d'emprunt -->
+    <form method="POST" action="">
+        <div>
+            <label>Utilisateur :</label>
+            <br>
+            <select name="id_utilisateur" id="id_utilisateur">
+            
+               
+               <?php 
+                // Affichage des utilisateurs avec prénom et nom
+                foreach ($utilisateurs as $utilisateur) {
+                    echo "<option value='" . $utilisateur['id_utilisateur'] . "'>" . $utilisateur['prenom_utilisateur'] . " " . $utilisateur['nom_utilisateur'] . "</option>";
+                }
+                ?>
+
+            </select>
+            <br>
+            <br>
+        </div>
+
+        <!-- Choix de l'auteur -->
+        <div>
+            <label>Auteur :</label>
+            <br>
+            <select name="id_auteur" id="id_auteur" onchange="this.form.submit()">
+                <option value="">Sélectionnez un auteur</option>
+               
+               <?php 
+                // Affichage des auteurs
+                foreach ($auteurs as $auteur) {
+                    echo "<option value='" . $auteur['id_ecrivain'] . "'" . (isset($_POST['id_auteur']) && $_POST['id_auteur'] == $auteur['id_ecrivain'] ? ' selected' : '') . ">" . $auteur['prenom_ecrivain'] . " " . $auteur['nom_ecrivain'] . "</option>";
+                    echo "<br><br>";
+                }
+                ?>
+
+            </select>
+            <br>
+            <br>
+        </div>
+
+        <!-- Choix du livre basé sur l'auteur -->
+        <div>
+            <label for="id_livre">Livre :</label>
+            <br>
+            <select name="id_livre" id="id_livre">
+                <option value="">Choisissez un livre</option>
+                
+                <?php 
+                // Affichage des livres disponibles pour l'auteur sélectionné
+                if (!empty($livres)) {
+                    foreach ($livres as $livre) {
+                        echo "<option value='" . $livre['id_livre'] . "'>" . $livre['titre'] . "</option>";
+                    }
+                }
+                ?>
+
+            </select>
+            <br>
+            <br>
+        </div>
+
+        <div>
+            <button type="submit">Emprunter</button>
+        </div>
+    </form>
+</div>
+<!-- --------------- SECTION EMPRUNTS FIN --------------- -->
 
 </body>
 
